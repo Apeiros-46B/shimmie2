@@ -71,7 +71,7 @@ in
 
     phpPackage = mkOption {
       type = types.package;
-      default = pkgs.php84.buildEnv {
+      default = pkgs.php85.buildEnv {
         extensions = { enabled, all }: enabled ++ (with all; [
           pdo_sqlite
           gd
