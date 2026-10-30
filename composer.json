@@ -8,7 +8,7 @@
     "prefer-stable": true,
     "config": {
         "platform": {
-            "php": "8.4.0"
+            "php": "8.5.0"
         }
     },
     "repositories": [
@@ -30,12 +30,12 @@
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "ext-pdo": "*",
         "ext-json": "*",
         "ext-fileinfo": "*",
         "ifixit/php-akismet": "^1.0",
-        "google/recaptcha": "^1.1",
+        "google/recaptcha": "^2.1",
         "shish/ffsphp": "^1.6",
         "shish/microbundler": "^1.1.0",
         "shish/microcrud": "^2.5",
@@ -43,7 +43,7 @@
         "shish/microotlp": "^1.0",
         "shish/gqla": "^1.2",
         "thecodingmachine/safe": "^3.4",
-        "enshrined/svg-sanitize": "^0.22",
+        "enshrined/svg-sanitize": "^1.0",
         "bower-asset/js-cookie": "^2.1",
         "psr/simple-cache": "^1.0.1",
         "sabre/cache": "^2.0.1",
@@ -115,7 +115,8 @@
         "format-ci": "php-cs-fixer check --format=@auto",
         "analyse-ci": "phpstan analyse --memory-limit 1G --error-format=github",
         "analyse": "phpstan analyse --memory-limit 1G --error-format=raw | sed -E 's/:([0-9]+):/:\\1 /'",
-        "test": "php -d xdebug.mode=coverage vendor/bin/phpunit",
+        "test-cover": "php -d xdebug.mode=coverage vendor/bin/phpunit",
+        "test": "vendor/bin/phpunit --no-coverage",
         "docker-run": "./.docker/run.php"
     }
 }
