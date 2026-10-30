@@ -326,12 +326,28 @@ in
         script = ''
           set -eux
 
+          echo "==> linking data directory"
+          mkdir -p "${cfg.stateDir}"
+          ln -sfnT "${cfg.dataDir}" "${cfg.stateDir}/data"
+
+          echo "==> linking nix-managed config files"
+          mkdir -p "${cfg.dataDir}/config"
+          for name in shimmie extensions user-classes; do
+            src="/etc/shimmie/$name.conf.php"
+            dst="${cfg.dataDir}/config/$name.conf.php"
+            if [ -f "$src" ]; then
+              rm -f "$dst"
+              ln -sfn "$src" "$dst"
+            else
+              rm -f "$dst"
+            fi
+          done
+
           stamp="${cfg.stateDir}/.shimmie_pkg"
           if [ -f "$stamp" ] && [ "$(cat "$stamp")" = "${cfg.package}" ]; then
             echo "==> package unchanged, skipping installation"
           else
             echo "==> installing shimmie2 source to ${cfg.stateDir}"
-            mkdir -p "${cfg.stateDir}"
             for item in "${cfg.package}/share/shimmie2/"*; do
               b=$(basename "$item")
               if [ "$b" = data ] || [ "$b" = vendor ]; then continue; fi
@@ -343,22 +359,6 @@ in
             cd "${cfg.stateDir}"
             ${cfg.phpPackage.packages.composer}/bin/composer install \
               --no-dev --no-interaction --optimize-autoloader --no-progress
-
-            echo "==> linking data directory"
-            ln -sfn "${cfg.dataDir}" "${cfg.stateDir}/data"
-
-            echo "==> linking nix-managed config files"
-            mkdir -p "${cfg.dataDir}/config"
-            for name in shimmie extensions user-classes; do
-              src="/etc/shimmie/$name.conf.php"
-              dst="${cfg.dataDir}/config/$name.conf.php"
-              if [ -f "$src" ]; then
-                rm -f "$dst"
-                ln -sfn "$src" "$dst"
-              else
-                rm -f "$dst"
-              fi
-            done
 
             echo "==> bootstrapping core database tables"
             ${cfg.phpPackage}/bin/php ${./install_db.php}
