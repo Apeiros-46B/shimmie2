@@ -141,7 +141,6 @@ final class Network
         if (Ctx::$config->get(UploadConfig::TRANSLOAD_ENGINE) === "curl" && function_exists("curl_init")) {
             $ch = curl_init($url);
             assert($ch !== false);
-            $fp = \Safe\fopen($mfile->str(), "w");
 
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             # curl_setopt($ch, CURLOPT_VERBOSE, true);
@@ -152,12 +151,28 @@ final class Network
             curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
 
-            $response = curl_exec($ch);
-            if ($response === false) {
-                throw new FetchException("cURL failed: ".curl_error($ch));
-            }
-            if ($response === true) { // we use CURLOPT_RETURNTRANSFER, so this should never happen
-                throw new FetchException("cURL failed successfully??");
+            for ($redirects = 0; ; $redirects++) {
+                $response = curl_exec($ch);
+                if ($response === false) {
+                    throw new FetchException("cURL failed: ".curl_error($ch));
+                }
+
+                if ($response === true) {
+                    throw new FetchException("cURL failed successfully??");
+                }
+
+                $status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+                $redirect = curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+                if (!in_array($status, [301, 302, 303, 307, 308], true) || !$redirect) {
+                    break;
+                }
+
+                if ($redirects >= 5) {
+                    throw new FetchException("Too many redirects fetching $url");
+                }
+
+                self::validate_url_for_fetch($redirect);
+                curl_setopt($ch, CURLOPT_URL, $redirect);
             }
 
             $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
@@ -165,6 +180,7 @@ final class Network
             $headers = Network::http_parse_headers(implode("\n", \Safe\preg_split('/\R/', $header_text)));
             $body = substr($response, $header_size);
 
+            $fp = \Safe\fopen($mfile->str(), "w");
             fwrite($fp, $body);
             fclose($fp);
         }
